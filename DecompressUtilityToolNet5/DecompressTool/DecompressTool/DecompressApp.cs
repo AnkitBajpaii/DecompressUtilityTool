@@ -33,7 +33,7 @@ namespace DecompressTool
                     return;
                 }
 
-                DecompressService service = new(appLogger, processedLogger);
+                DecompressService service = new DecompressService(appLogger, processedLogger);
 
                 service.Decompress(fileNamesList, configurationWrapper.From, configurationWrapper.To);
             }

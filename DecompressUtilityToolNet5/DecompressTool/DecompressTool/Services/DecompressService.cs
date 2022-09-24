@@ -45,14 +45,14 @@ namespace DecompressTool.Services
 
             IList<string> latestModifiedZippedFilePaths = GetLatestModifiedFiles(filePrefixes, from).Select(x => x.FullName).ToList();
 
-            DecompressFileProcessor fileProcessor = new(appLogger, processedFileLogger, to);
+            DecompressFileProcessor fileProcessor = new DecompressFileProcessor(appLogger, processedFileLogger, to);
 
             fileProcessor.ProcessMultiple(latestModifiedZippedFilePaths);
         }
 
         private static IList<FileInfo> GetLatestModifiedFiles(IList<string> filePrefixes, string? from)
         {
-            DirectoryInfo di = new(from);
+            DirectoryInfo di = new DirectoryInfo(from);
 
             var fileToProcess = di.GetFiles().Where(x => x.Name.EndsWith(".zip") || x.Name.EndsWith(".gz"));
 

@@ -3,9 +3,9 @@ using DecompressTool.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Security.Principal;
+using SharpCompress.Common;
+using SharpCompress.Readers;
 
 namespace DecompressTool.Services
 {
@@ -104,30 +104,66 @@ namespace DecompressTool.Services
 
                 List<string> extractedFilePaths = new List<string>();
 
-                using (ZipArchive archive = ZipFile.OpenRead(zipFilePath))
+                using (Stream stream = File.OpenRead(zipFilePath))
+                using (var reader = ReaderFactory.Open(stream))
                 {
-                    foreach (ZipArchiveEntry entry in archive.Entries)
+                    while (reader.MoveToNextEntry())
                     {
-                        string fileName = RemoveTimeStamp(entry.FullName);
+                        var entry = reader.Entry;
 
-                        // Gets the full path to ensure that relative segments are removed.
-                        string destinationPath = Path.GetFullPath(Path.Combine(extractPath, fileName));
-
-                        if (destinationPath.StartsWith(extractPath, StringComparison.Ordinal))
+                        if (!entry.IsDirectory)
                         {
-                            entry.ExtractToFile(destinationPath, true);
+                            string fileName = RemoveTimeStamp(entry.Key);
 
-                            if (!zipToExtractedFilesPathMap.ContainsKey(zipFilePath))
+                            // Gets the full path to ensure that relative segments are removed.
+                            string destinationPath = Path.GetFullPath(Path.Combine(extractPath, fileName));
+
+                            if (destinationPath.StartsWith(extractPath, StringComparison.Ordinal))
                             {
-                                zipToExtractedFilesPathMap.Add(zipFilePath, new List<string>());
+                                reader.WriteEntryToFile(destinationPath, new ExtractionOptions()
+                                {
+                                    ExtractFullPath = true,
+                                    Overwrite = true
+                                });
+
+                                if (!zipToExtractedFilesPathMap.ContainsKey(zipFilePath))
+                                {
+                                    zipToExtractedFilesPathMap.Add(zipFilePath, new List<string>());
+                                }
+
+                                zipToExtractedFilesPathMap[zipFilePath].Add(destinationPath);
+
+                                extractedFilePaths.Add(destinationPath);
                             }
-
-                            zipToExtractedFilesPathMap[zipFilePath].Add(destinationPath);
-
-                            extractedFilePaths.Add(destinationPath);
                         }
                     }
                 }
+
+                // Commented below code as it was not working with pkzip
+                //using (ZipArchive archive = ZipFile.OpenRead(zipFilePath))
+                //{
+                //    foreach (ZipArchiveEntry entry in archive.Entries)
+                //    {
+                //        string fileName = RemoveTimeStamp(entry.FullName);
+
+                //        // Gets the full path to ensure that relative segments are removed.
+                //        string destinationPath = Path.GetFullPath(Path.Combine(extractPath, fileName));
+
+                //        if (destinationPath.StartsWith(extractPath, StringComparison.Ordinal))
+                //        {
+                //            entry.ExtractToFile(destinationPath, true);
+
+                //            if (!zipToExtractedFilesPathMap.ContainsKey(zipFilePath))
+                //            {
+                //                zipToExtractedFilesPathMap.Add(zipFilePath, new List<string>());
+                //            }
+
+                //            zipToExtractedFilesPathMap[zipFilePath].Add(destinationPath);
+
+                //            extractedFilePaths.Add(destinationPath);
+                //        }
+                //    }
+                //}
 
                 appLogger.Log($"Successfully decompressed");
 

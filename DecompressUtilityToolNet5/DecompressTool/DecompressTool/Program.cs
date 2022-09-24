@@ -6,7 +6,7 @@ namespace DecompressTool
     {
         static void Main(string[] args)
         {
-            DecompressApp app = new();
+            DecompressApp app = new DecompressApp();
 
             app.Run();
 
